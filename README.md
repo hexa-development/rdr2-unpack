@@ -1,18 +1,272 @@
 # rdr2-unpack
 
-**อ่านไฟล์เกม Red Dead Redemption 2 ที่ติดตั้งอยู่ในเครื่องคุณเอง ให้ออกมาเป็นไฟล์เปิด** —
+**[English](#english) · [ภาษาไทย](#thai)**
+
+Read a local Red Dead Redemption 2 installation into open formats — a searchable
+index of every asset in the game, GLB models, PNG textures, and parsed `.ymap`
+placements.
+
+อ่านไฟล์เกม Red Dead Redemption 2 ที่ติดตั้งอยู่ในเครื่องคุณเอง ให้ออกมาเป็นไฟล์เปิด —
 ดัชนีของ asset ทุกชิ้นในเกม, โมเดลเป็น `.glb`, เท็กซ์เจอร์เป็น `.png`
 และตำแหน่งวางของจาก `.ymap` เป็น JSON
 
-> **In English:** a command-line pipeline that turns a local Red Dead Redemption 2
-> installation into open formats — a searchable index of every asset in the game,
-> GLB models, PNG textures, and parsed `.ymap` placements. Windows, Node 18+,
-> Python 3.13+. **No game data and no decryption keys are shipped with this tool.**
+> Windows · Node 18+ · Python 3.13+
+> **No game data and no decryption keys are shipped with this tool.**
+
+---
+
+<a id="english"></a>
+
+# English
+
+This toolset was split out of Hexa Map Studio (a 3D map editor for RedM) so it
+can be used on its own — no editor to open, and easy to plug into another
+pipeline.
+
+## What it does
+
+| Command | Result |
+| --- | --- |
+| `rdr2-unpack doctor` | Report which parts of the toolchain were found, and where |
+| `rdr2-unpack index --all` | Walk every `levels_*.rpf` and record which archive holds each asset |
+| `rdr2-unpack areas` | Group the index into named places (`val_01_` = all seven of Valentine's ymaps) |
+| `rdr2-unpack archetypes` | Read every `.ytyp` so ymap hashes resolve back to real asset names |
+| `rdr2-unpack model --model=<name>` | Pull one model out of the game as a textured GLB |
+| `rdr2-unpack area --area=<name> --models` | Pull a whole place: placements plus every model it uses |
+| `rdr2-unpack textures <src> <out>` | A folder of RSC7 `.ytd` to PNG + manifest |
+| `rdr2-unpack glb <src> <out>` | A folder of RSC7 `.ydr` to GLB |
+
+Every script still runs on its own — `node tools/extract_model.cjs --model=...`
+works exactly as before. `rdr2-unpack` is only a single entry point that calls
+them.
+
+## What you need on your machine
+
+RDR2 encrypts its RPF8 table of contents (TFIT2/CBC) and the keys live in
+`secrets.bin`, which is **not part of the game files** — unlike GTA V, which
+CodeWalker reads directly. Those keys will never ship with this tool, so an
+archive reader has to already be present on the machine.
+
+| Required | Used for |
+| --- | --- |
+| An installed RDR2 | The source files (must contain `RDR2.exe` + `levels_0.rpf`) |
+| `ArchiveExplorer.exe` | Reading RPF8 |
+| `secrets.bin` | RPF8 decryption keys |
+| FiveM / RedM (Cfx) | RSC8 → RSC7 via `formats:convert` |
+| Node.js 18+ | Running the pipeline |
+| Python 3.13+ | Mesh / texture conversion |
+
+`rdr2-unpack doctor` locates all of it for you. You only set a path when the
+guess is wrong.
+
+## Install
+
+```powershell
+git clone https://github.com/QUITFIL3/rdr2-unpack.git
+cd rdr2-unpack
+python -m pip install -r requirements.txt
+node bin/rdr2-unpack.cjs doctor
+```
+
+To call it as `rdr2-unpack` from anywhere:
+
+```powershell
+npm link          # in the folder you cloned into
+rdr2-unpack doctor
+```
+
+Or use it as another project's dependency:
+
+```powershell
+npm install github:QUITFIL3/rdr2-unpack
+```
+
+### When doctor can't find something
+
+Three ways to set a path, in priority order: **flag > environment variable >
+config file**
+
+```powershell
+# 1. per command
+rdr2-unpack index --all '--helper=F:\tools\ArchiveExplorer.exe'
+
+# 2. environment variable
+$env:RDR2_ARCHIVE_EXPLORER = 'F:\tools\ArchiveExplorer.exe'
+```
+
+3. A `rdr2-unpack.json` in the working directory, in the tool's own folder, or
+   at `~/.rdr2-unpack.json`:
+
+```json
+{
+  "game": "G:\\RedDeadRedemption2",
+  "cache": "F:\\RDR2-World-Cache",
+  "helper": "F:\\tools\\ArchiveExplorer\\ArchiveExplorer.exe",
+  "secrets": "F:\\tools\\ArchiveExplorer\\secrets.bin",
+  "cfx": "C:\\Users\\me\\AppData\\Local\\FiveM\\FiveM.app\\FiveM.com",
+  "python": "C:\\Users\\me\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe"
+}
+```
+
+Every variable name: `RDR2_GAME_DIR`, `RDR2_CACHE_DIR`,
+`RDR2_ARCHIVE_EXPLORER`, `RDR2_SECRETS`, `RDR2_CFX`, `RDR2_PYTHON`
+(the older `HEXA_*` names still work).
+
+## Getting started
+
+In this order — each step uses the one before it:
+
+```powershell
+# 1. index the whole game — once, and again only when the game updates
+rdr2-unpack index --all
+
+# 2. group it into places
+rdr2-unpack areas
+
+# 3. read archetypes from .ytyp (skip this and half of a town comes back as hashes)
+rdr2-unpack archetypes
+
+# 4. actually pull things out
+rdr2-unpack model --model=big_glue_tree_002
+rdr2-unpack area --area=val_01_ --models --jobs=4
+```
+
+Step 1 is the long one: two ArchiveExplorer spawns per archive, almost entirely
+process startup and I/O wait rather than CPU — so raising `--jobs` pays.
+Measured on a 12-core machine over `levels_1` (341 archives): 1 job ≈ 1,228 s,
+8 jobs 229 s, 14 jobs 160 s. Past that the disk is the limit, not the CPU.
+
+Step 1 is **incremental** (a levels file whose size and mtime are unchanged is
+skipped) and **resumable** (entries are appended as NDJSON, so stopping loses
+nothing).
+
+## What you get out
+
+```
+<cache>/
+  world-index/
+    entries.ndjson      one line per file: {n:name, e:ext, a:archiveId, p:path}
+    archives.json       archiveId → where that archive actually lives
+    index.json          run manifest: which levels files are done, and counts
+    areas.json          from `areas` — place → its ymaps and bounds
+    archetypes.ndjson   from `archetypes` — one line per archetype
+  ondemand/
+    glb/<model>.glb     converted models (converted once, then just a file read)
+```
+
+A model takes a few seconds to convert (ArchiveExplorer → Cfx
+`formats:convert` → GLB), which is why the result is always cached: far too slow
+to repeat per use, perfectly fine once per model.
+
+### Machine-readable output
+
+Every command writes JSON lines to stdout behind a fixed prefix. (The
+`FRONTIER_` prefix is the old name of the program this was split out of, and is
+kept so existing callers keep working.)
+
+| Prefix | Meaning |
+| --- | --- |
+| `FRONTIER_PROGRESS` | `{stage, current, total, percent, message}` |
+| `FRONTIER_MODEL` | from `model` — `{model, glb, cached, textures, bytes, timings}` |
+| `FRONTIER_AREA` | from `area` — every placement (emitted first, so a caller can draw immediately) |
+| `FRONTIER_AREA_MODELS` | conversion summary for that place |
+
+Reading it from the calling side looks like this:
+
+```js
+child.stdout.on('data', (chunk) => {
+  for (const line of chunk.toString().split('\n')) {
+    if (line.startsWith('FRONTIER_MODEL ')) {
+      const payload = JSON.parse(line.slice('FRONTIER_MODEL '.length))
+      // payload.glb is the path to the converted file
+    }
+  }
+})
+```
+
+## Use it as a library
+
+The `.ymap` reader is plain JavaScript with no dependencies at all:
+
+```js
+const { parseYmap, joaat } = require('rdr2-unpack')
+
+const map = parseYmap(fs.readFileSync('val_01__strm_0.ymap'))
+// { version, systemSize, entityCount, entities }
+
+for (const entity of map.entities) {
+  // { name, model, modelHash, position:{x,y,z}, rotation:{x,y,z} in degrees,
+  //   quaternion:{x,y,z,w}, scale:{x,y,z} }
+  console.log(entity.model, entity.position, entity.rotation)
+}
+
+joaat('prop_bench_01')   // name → the hash a ymap actually stores
+```
+
+A ymap stores hashes, not names. If you already have a name table, pass it as
+the second argument: `parseYmap(bytes, (hash) => namesByHash.get(hash))` —
+anything that does not resolve becomes a hex label rather than being dropped.
+
+`parseYmap` reads the real RSC8 layout with validation and **refuses to guess** —
+if the structure does not match what was verified, it throws instead of
+returning plausible nonsense. It takes both binary RSC8 and XML ymaps, deciding
+from the magic number.
+
+The path resolver is reusable too:
+
+```js
+const { resolveToolchain } = require('rdr2-unpack/toolchain')
+const { game, cache, helper, cfx, python } = resolveToolchain({}, ['game', 'helper'])
+```
+
+## Troubleshooting
+
+**`Couldn't load CoreRT.dll` while converting a model**
+RedM or FiveM is running. The Cfx converter shares files with the running
+client — close the game and run again.
+
+**Half of a place comes back as hex numbers**
+`rdr2-unpack archetypes` has not been run. A ymap places things by archetype
+*hash*, and `.ytyp` files are what turn those hashes back into asset names.
+Without them a dense place like `val_01_` leaves 232 of 315 entities unplaceable.
+
+**`No world index at ...`**
+Run `rdr2-unpack index --all` first. Every other command reads from that index.
+
+**`Missing part of the toolchain`**
+Run `rdr2-unpack doctor`. It names what is missing and shows where it looked.
+
+## Scope
+
+This is **the extractor only** — it reads the game into open formats. It does
+not edit, and it does not pack anything back into the game. Terrain, heightmaps
+and the 3D world cache live in Hexa Map Studio, which calls this tool.
+
+Windows only, because ArchiveExplorer and the Cfx converter are Windows
+binaries.
+
+## Legal
+
+This tool ships no game files, no decryption keys, and no third-party binaries.
+It works against the game **you installed yourself**, and what comes out is from
+your own machine — do not redistribute it. Details in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Red Dead Redemption 2 is the property of Rockstar Games and Take-Two
+Interactive. This is a community tool with no affiliation to either company.
+
+## License
+
+MIT — see [LICENSE](LICENSE)
+
+---
+
+<a id="thai"></a>
+
+# ภาษาไทย
 
 เครื่องมือชุดนี้ถูกแยกออกมาจาก Hexa Map Studio (โปรแกรมแก้ไขแมพ RedM แบบ 3D)
 เพื่อให้ใช้เดี่ยว ๆ ได้ ไม่ต้องเปิดโปรแกรม editor และเอาไปต่อกับ pipeline อื่นได้
-
----
 
 ## ทำอะไรได้บ้าง
 
@@ -30,8 +284,6 @@
 ทุกสคริปต์ยังรันตรง ๆ ได้เหมือนเดิม เช่น `node tools/extract_model.cjs --model=...`
 ตัว `rdr2-unpack` เป็นแค่ทางเข้าเดียวที่เรียกให้
 
----
-
 ## สิ่งที่ต้องมีในเครื่อง
 
 RDR2 เข้ารหัส table of contents ของ RPF8 ไว้ (TFIT2/CBC) และคีย์อยู่ใน `secrets.bin`
@@ -48,8 +300,6 @@ RDR2 เข้ารหัส table of contents ของ RPF8 ไว้ (TFIT2/
 | Python 3.13+ | แปลง mesh / texture |
 
 `rdr2-unpack doctor` จะไล่หาให้เองทั้งหมด ไม่ต้องตั้ง path เอง เว้นแต่มันเดาผิด
-
----
 
 ## ติดตั้ง
 
@@ -102,8 +352,6 @@ $env:RDR2_ARCHIVE_EXPLORER = 'F:\tools\ArchiveExplorer.exe'
 `RDR2_ARCHIVE_EXPLORER`, `RDR2_SECRETS`, `RDR2_CFX`, `RDR2_PYTHON`
 (ชื่อเดิม `HEXA_*` ยังใช้ได้)
 
----
-
 ## เริ่มใช้งาน
 
 ทำตามลำดับนี้ — แต่ละขั้นใช้ผลของขั้นก่อนหน้า
@@ -130,8 +378,6 @@ rdr2-unpack area --area=val_01_ --models --jobs=4
 
 ขั้นที่ 1 ทำงานแบบ **incremental** (ไฟล์ levels ที่ขนาด/เวลาไม่เปลี่ยนจะถูกข้าม)
 และ **resumable** (เขียนเป็น NDJSON ต่อท้าย หยุดกลางคันแล้วรันใหม่ไม่เสียของ)
-
----
 
 ## ได้อะไรออกมาบ้าง
 
@@ -175,8 +421,6 @@ child.stdout.on('data', (chunk) => {
 })
 ```
 
----
-
 ## ใช้เป็น library
 
 ตัวอ่าน `.ymap` เป็น JavaScript ล้วน ไม่ต้องพึ่งอะไรเลย เรียกใช้ตรง ๆ ได้:
@@ -211,8 +455,6 @@ const { resolveToolchain } = require('rdr2-unpack/toolchain')
 const { game, cache, helper, cfx, python } = resolveToolchain({}, ['game', 'helper'])
 ```
 
----
-
 ## แก้ปัญหา
 
 **`Couldn't load CoreRT.dll` ตอนแปลงโมเดล**
@@ -230,8 +472,6 @@ const { game, cache, helper, cfx, python } = resolveToolchain({}, ['game', 'help
 **`Missing part of the toolchain`**
 รัน `rdr2-unpack doctor` มันจะบอกว่าตัวไหนหาย และหาที่ path ไหนไปแล้วบ้าง
 
----
-
 ## ขอบเขตของเครื่องมือนี้
 
 ตัวนี้คือ**ตัวถอด**อย่างเดียว — อ่านออกมาเป็นไฟล์เปิด ไม่แก้ ไม่ pack กลับเข้าเกม
@@ -239,8 +479,6 @@ const { game, cache, helper, cfx, python } = resolveToolchain({}, ['game', 'help
 ซึ่งเรียกใช้ตัวนี้อีกที
 
 รองรับ Windows เท่านั้น เพราะ ArchiveExplorer และ Cfx converter เป็น Windows binary
-
----
 
 ## ข้อกฎหมาย
 
