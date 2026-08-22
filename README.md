@@ -9,7 +9,7 @@
 > GLB models, PNG textures, and parsed `.ymap` placements. Windows, Node 18+,
 > Python 3.13+. **No game data and no decryption keys are shipped with this tool.**
 
-เครื่องมือชุดนี้ถูกแยกออกมาจาก [Hexa Map Studio](https://github.com/QUITFIL3/RedM-Map-Studio)
+เครื่องมือชุดนี้ถูกแยกออกมาจาก Hexa Map Studio (โปรแกรมแก้ไขแมพ RedM แบบ 3D)
 เพื่อให้ใช้เดี่ยว ๆ ได้ ไม่ต้องเปิดโปรแกรม editor และเอาไปต่อกับ pipeline อื่นได้
 
 ---
@@ -235,8 +235,8 @@ const { game, cache, helper, cfx, python } = resolveToolchain({}, ['game', 'help
 ## ขอบเขตของเครื่องมือนี้
 
 ตัวนี้คือ**ตัวถอด**อย่างเดียว — อ่านออกมาเป็นไฟล์เปิด ไม่แก้ ไม่ pack กลับเข้าเกม
-ส่วนที่เป็น terrain, heightmap และ world cache 3D อยู่ใน
-[Hexa Map Studio](https://github.com/QUITFIL3/RedM-Map-Studio) ซึ่งเรียกใช้ตัวนี้อีกที
+ส่วนที่เป็น terrain, heightmap และ world cache 3D อยู่ใน Hexa Map Studio
+ซึ่งเรียกใช้ตัวนี้อีกที
 
 รองรับ Windows เท่านั้น เพราะ ArchiveExplorer และ Cfx converter เป็น Windows binary
 
