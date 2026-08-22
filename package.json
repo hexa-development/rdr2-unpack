@@ -1,0 +1,55 @@
+{
+  "name": "rdr2-unpack",
+  "version": "0.1.0",
+  "description": "Read a local Red Dead Redemption 2 installation into open formats: a world index, GLB models, PNG textures and parsed .ymap placements.",
+  "license": "MIT",
+  "author": "Hexa",
+  "keywords": [
+    "rdr2",
+    "red-dead-redemption-2",
+    "redm",
+    "rpf8",
+    "ymap",
+    "ydr",
+    "ytd",
+    "ytyp",
+    "glb",
+    "modding"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/QUITFIL3/rdr2-unpack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/QUITFIL3/rdr2-unpack/issues"
+  },
+  "homepage": "https://github.com/QUITFIL3/rdr2-unpack#readme",
+  "main": "lib/ymap-rsc8.cjs",
+  "exports": {
+    ".": "./lib/ymap-rsc8.cjs",
+    "./ymap": "./lib/ymap-rsc8.cjs",
+    "./toolchain": "./lib/toolchain.cjs",
+    "./package.json": "./package.json",
+    "./tools/*": "./tools/*"
+  },
+  "bin": {
+    "rdr2-unpack": "bin/rdr2-unpack.cjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "tools",
+    "requirements.txt",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "scripts": {
+    "test": "node test/check.cjs",
+    "doctor": "node bin/rdr2-unpack.cjs doctor"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "win32"
+  ]
+}

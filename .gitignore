@@ -1,0 +1,22 @@
+node_modules/
+*.log
+.DS_Store
+
+# Python helpers
+__pycache__/
+*.pyc
+
+# Local machine paths — the tool detects them, and this file pins them when
+# detection guesses wrong. It describes one machine, so it is never committed.
+rdr2-unpack.json
+
+# Never commit game data or decryption keys.
+secrets.bin
+*.rpf
+*.ydr
+*.ytd
+*.ybn
+*.ymap
+*.ymt
+*.ytyp
+*.glb

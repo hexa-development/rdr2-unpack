@@ -1,0 +1,6 @@
+# Normalise line endings so a Windows-authored repo stays clean on Linux/macOS.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.glb binary
