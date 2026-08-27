@@ -13,6 +13,12 @@ placements.
 > Windows · Node 18+ · Python 3.13+
 > **No game data and no decryption keys are shipped with this tool.**
 
+[![Hexa Development](https://img.shields.io/badge/Hexa-Development-B45309?style=for-the-badge)](https://github.com/hexa-development)
+[![RDR2](https://img.shields.io/badge/Game-RDR2-8B0000?style=for-the-badge)](https://www.rockstargames.com/reddeadredemption2)
+[![Node](https://img.shields.io/badge/Node-18%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/Python-3.13%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-181717?style=for-the-badge)](LICENSE)
+
 ---
 
 <a id="english"></a>
@@ -492,3 +498,21 @@ Red Dead Redemption 2 เป็นทรัพย์สินของ Rockstar 
 ## License
 
 MIT — ดู [LICENSE](LICENSE)
+
+---
+
+## Hexa Ecosystem
+
+`rdr2-unpack` is a standalone tool maintained by [Hexa Development](https://github.com/hexa-development) alongside the Hexa RedM framework. It needs none of the resources below, and none of them need it — it is here because the same people build both.
+
+| Project | Description |
+| :--- | :--- |
+| [`hexa_core`](https://github.com/hexa-development/hexa_core) | Core framework — players, jobs, items, economy, status, callbacks, permissions |
+| [`hexa_inventory`](https://github.com/hexa-development/hexa_inventory) | Persistent grid inventory — stashes, shops, ground drops, secure trading |
+| [`hexa_progbar`](https://github.com/hexa-development/hexa_progbar) | Screen-fixed progress bar — drop-in for `ox_lib` `progressBar` |
+| [`hexa-bridge`](https://github.com/hexa-development/hexa-bridge) | Compatibility layer for supported RSG and VORP resources |
+| [`hexa-docs`](https://github.com/hexa-development/hexa-docs) | Official documentation and API reference (VitePress) |
+| **`rdr2-unpack`** | Read a local RDR2 install into open formats — GLB, PNG, `.ymap` JSON <br> *(this repository)* |
+| [`txAdmin`](https://github.com/hexa-development/txAdmin) | txAdmin deployment recipe for a Hexa server *(work in progress)* |
+
+Framework documentation: [hexa-development.github.io/hexa-docs](https://hexa-development.github.io/hexa-docs/) · [เอกสารภาษาไทย](https://hexa-development.github.io/hexa-docs/th/)
