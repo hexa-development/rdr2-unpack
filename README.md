@@ -513,6 +513,6 @@ MIT — ดู [LICENSE](LICENSE)
 | [`hexa-bridge`](https://github.com/hexa-development/hexa-bridge) | Compatibility layer for supported RSG and VORP resources |
 | [`hexa-docs`](https://github.com/hexa-development/hexa-docs) | Official documentation and API reference (VitePress) |
 | **`rdr2-unpack`** | Read a local RDR2 install into open formats — GLB, PNG, `.ymap` JSON <br> *(this repository)* |
-| [`txAdmin`](https://github.com/hexa-development/txAdmin) | txAdmin deployment recipe for a Hexa server *(work in progress)* |
+| [`txAdmin`](https://github.com/hexa-development/txAdmin) | One-click txAdmin recipe that deploys the whole Hexa stack |
 
 Framework documentation: [hexa-development.github.io/hexa-docs](https://hexa-development.github.io/hexa-docs/) · [เอกสารภาษาไทย](https://hexa-development.github.io/hexa-docs/th/)
